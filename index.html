@@ -604,33 +604,63 @@
                 return;
             }
             
-            // Simulate beta registration
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showNotification('Bitte gib eine gültige E-Mail Adresse ein!', 'info');
+                return;
+            }
+            
+            // Check if email already registered
+            let betaSignups = JSON.parse(localStorage.getItem('elitesmash_beta') || '[]');
+            const existingSignup = betaSignups.find(signup => signup.email === email);
+            
+            if (existingSignup) {
+                showNotification(`Du bist bereits registriert! Position #${existingSignup.betaNumber} in ${existingSignup.region}`, 'info');
+                return;
+            }
+            
+            // Get region-specific count
+            const regionSignups = betaSignups.filter(signup => signup.region === region);
+            const regionPosition = regionSignups.length + 1;
+            const globalPosition = betaSignups.length + 1;
+            
+            // Create beta registration
             const betaData = {
                 email: email,
-                tag: tag || 'Anonymous Elite',
+                tag: tag || 'Elite Player',
                 region: region,
                 timestamp: new Date().toISOString(),
-                betaNumber: Math.floor(Math.random() * 1000) + 1
+                betaNumber: regionPosition,
+                globalPosition: globalPosition,
+                id: 'elite_' + Date.now()
             };
             
-            // Store in localStorage for demo
-            let betaSignups = JSON.parse(localStorage.getItem('elitesmash_beta') || '[]');
+            // Store registration
             betaSignups.push(betaData);
             localStorage.setItem('elitesmash_beta', JSON.stringify(betaSignups));
             
-            showNotification(`🏆 Willkommen bei der Elite Beta, ${betaData.tag}! Du bist #${betaData.betaNumber} in ${region}.`, 'success');
+            // Show realistic success message
+            const playerName = tag || 'Elite Player';
+            showNotification(
+                `🏆 Willkommen ${playerName}! Du bist #${regionPosition} in der ${region} Beta-Warteschlange. Wir senden dir Updates!`, 
+                'success'
+            );
             
             // Clear form
             document.getElementById('betaEmail').value = '';
             document.getElementById('betaTag').value = '';
             document.getElementById('betaRegion').value = '';
             
-            // Update UI to show registered state
+            // Update button temporarily
             const button = event.target;
             const originalText = button.textContent;
             button.textContent = '✅ Elite Beta Registration erfolgreich!';
             button.style.background = 'linear-gradient(45deg, #2ecc71, #27ae60)';
             button.disabled = true;
+            
+            // Update beta counter in banner
+            updateBetaCounter();
             
             setTimeout(() => {
                 button.textContent = originalText;
@@ -639,7 +669,109 @@
             }, 3000);
         }
         
-        function showNotification(message, type = 'info') {
+        function updateBetaCounter() {
+            const betaSignups = JSON.parse(localStorage.getItem('elitesmash_beta') || '[]');
+            const banner = document.querySelector('.demo-banner');
+            
+            if (betaSignups.length > 0) {
+                // Get region breakdown
+                const regionCounts = betaSignups.reduce((acc, signup) => {
+                    acc[signup.region] = (acc[signup.region] || 0) + 1;
+                    return acc;
+                }, {});
+                
+                const regionText = Object.entries(regionCounts)
+                    .map(([region, count]) => `${region}: ${count}`)
+                    .join(' • ');
+                
+                banner.innerHTML = `🚧 ENTWICKLUNG LÄUFT - ${betaSignups.length} Elite Beta Members registriert! (${regionText}) 🚧`;
+            }
+        }
+        
+        function showBetaStats() {
+            const betaSignups = JSON.parse(localStorage.getItem('elitesmash_beta') || '[]');
+            
+            if (betaSignups.length === 0) {
+                showNotification('Noch keine Beta-Registrierungen vorhanden!', 'info');
+                return;
+            }
+            
+            // Group by region
+            const regionStats = betaSignups.reduce((acc, signup) => {
+                if (!acc[signup.region]) {
+                    acc[signup.region] = [];
+                }
+                acc[signup.region].push(signup);
+                return acc;
+            }, {});
+            
+            let statsText = 'Elite Beta Stats:\n\n';
+            Object.entries(regionStats).forEach(([region, signups]) => {
+                statsText += `${region}: ${signups.length} Members\n`;
+                signups.slice(0, 3).forEach((signup, index) => {
+                    statsText += `  #${index + 1}: ${signup.tag} (${new Date(signup.timestamp).toLocaleDateString()})\n`;
+                });
+                if (signups.length > 3) {
+                    statsText += `  ... und ${signups.length - 3} weitere\n`;
+                }
+                statsText += '\n';
+            });
+            
+            alert(statsText);
+        }
+        
+        // Add admin function to clear beta data (for testing)
+        function clearBetaData() {
+            if (confirm('Admin: Alle Beta-Daten löschen? (Nur für Testing)')) {
+                localStorage.removeItem('elitesmash_beta');
+                updateBetaCounter();
+                showNotification('Beta-Daten gelöscht!', 'info');
+            }
+        }
+        
+        // Enhanced user interactions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update beta counter on page load
+            updateBetaCounter();
+            
+            // Add keyboard shortcut for beta stats (Admin feature)
+            document.addEventListener('keydown', function(e) {
+                // Ctrl + Shift + B = Show beta stats
+                if (e.ctrlKey && e.shiftKey && e.key === 'B') {
+                    showBetaStats();
+                }
+                // Ctrl + Shift + C = Clear beta data (for testing)
+                if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+                    clearBetaData();
+                }
+            });
+            
+            // Add hover effects to feature cards
+            const featureCards = document.querySelectorAll('.feature-card');
+            featureCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.borderColor = 'rgba(255, 215, 0, 0.5)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                });
+            });
+            
+            // Welcome message for returning visitors
+            const betaSignups = JSON.parse(localStorage.getItem('elitesmash_beta') || '[]');
+            if (betaSignups.length > 0) {
+                const lastSignup = betaSignups[betaSignups.length - 1];
+                const timeSinceLastSignup = Date.now() - new Date(lastSignup.timestamp).getTime();
+                
+                // If last signup was within 5 minutes, show welcome back message
+                if (timeSinceLastSignup < 5 * 60 * 1000) {
+                    setTimeout(() => {
+                        showNotification(`🏆 Welcome back! Neueste Registrierung: ${lastSignup.tag} (#${lastSignup.betaNumber} in ${lastSignup.region})`, 'success');
+                    }, 1000);
+                }
+            }
+        });
             // Remove existing notification
             const existing = document.querySelector('.notification');
             if (existing) {
