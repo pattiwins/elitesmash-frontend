@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EliteSmash - Premium Ranked Matchmaking für Super Smash Bros</title>
+    <meta name="description" content="Professionelles ELO-System, regionale Leaderboards und Community Features für competitive Smash Bros Spieler">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 25px;
+            padding: 40px;
+            margin-bottom: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .header h1 {
+            font-size: 4em;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #ffd700, #ff6b35, #f7931e, #ffb347);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease infinite;
+            font-weight: 900;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .elite-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #ffd700, #ffb347);
+            color: #1a1a2e;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 25px;
+            padding: 35px;
+            margin-bottom: 30px;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .section:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(45deg, #ffd700, #ff6b35, #f7931e);
+            border-radius: 25px 25px 0 0;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            margin: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-elite {
+            background: linear-gradient(45deg, #ffd700, #ff6b35);
+            color: #1a1a2e;
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 215, 0, 0.5);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-elite:hover {
+            box-shadow: 0 12px 35px rgba(255, 215, 0, 0.5);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 35px;
+            border-radius: 20px;
+            text-align: center;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        .feature-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        .feature-card h3 {
+            font-size: 1.8em;
+            margin: 20px 0;
+            background: linear-gradient(45deg, #ffd700, #ff6b35);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        .beta-signup {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 107, 53, 0.15));
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            padding: 50px;
+            border-radius: 25px;
+            text-align: center;
+            margin: 50px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .beta-signup::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 18px 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .roadmap {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+
+        .roadmap-phase {
+            padding: 25px;
+            border-radius: 15px;
+            position: relative;
+            border-left: 4px solid;
+        }
+
+        .phase-current {
+            background: rgba(46, 204, 113, 0.1);
+            border-left-color: #2ecc71;
+        }
+
+        .phase-next {
+            background: rgba(52, 152, 219, 0.1);
+            border-left-color: #3498db;
+        }
+
+        .phase-future {
+            background: rgba(155, 89, 182, 0.1);
+            border-left-color: #9b59b6;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 18px 25px;
+            border-radius: 12px;
+            color: white;
+            z-index: 10000;
+            animation: slideInRight 0.4s ease;
+            max-width: 400px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+        }
+
+        .notification-success { 
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+        }
+
+        .notification-info { 
+            background: linear-gradient(45deg, #3498db, #2980b9);
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .demo-banner {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            text-align: center;
+            padding: 12px;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ffd700, #ff6b35);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .coming-soon-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 25px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 15px; }
+            .header h1 { font-size: 2.8em; }
+            .header { padding: 25px; }
+            .feature-grid, .roadmap { grid-template-columns: 1fr; }
+            .beta-signup { padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-banner">
+        🚧 ENTWICKLUNG LÄUFT - Werde Teil der Elite Beta Community! 🚧
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="status-indicator">⚡ In Development</div>
+            <div class="elite-badge">🏆 PREMIUM GAMING PLATFORM</div>
+            <h1>EliteSmash</h1>
+            <p style="color: #ffd700; font-size: 1.4em; margin-bottom: 15px; font-weight: 600;">
+                Premium Ranked Matchmaking für Elite Spieler
+            </p>
+            <p style="font-size: 1.1em; color: rgba(255, 255, 255, 0.8); max-width: 600px; margin: 0 auto;">
+                Professionelles ELO-System • Regionale Leaderboards • Community Features • Top 100 Qualifikation
+            </p>
+        </div>
+
+        <div class="section">
+            <h2 style="text-align: center; font-size: 2.5em; margin-bottom: 30px; background: linear-gradient(45deg, #ffd700, #ff6b35); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                🎮 Bald verfügbar!
+            </h2>
+            
+            <p style="font-size: 1.3em; text-align: center; margin-bottom: 40px; color: rgba(255, 255, 255, 0.9);">
+                EliteSmash wird die premier destination für competitive Smash Bros Spieler. 
+                Sichere dir jetzt deinen Platz in der Elite Beta!
+            </p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚔️</div>
+                    <h3>Elite Matchmaking</h3>
+                    <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.6;">
+                        Präzises ELO-System wie Chess.com für perfekt balancierte Matches gegen Spieler deines Skill-Levels
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🏆</div>
+                    <h3>Top 100 Program</h3>
+                    <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.6;">
+                        Die besten 100 Spieler jeder Region erhalten exklusive Einladungen zu Premium Start.gg Turnieren
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3>Regional Excellence</h3>
+                    <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.6;">
+                        EU, NA, JP, OCE - Separate Leaderboards und optimierte Connections für jede Region
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Premium Security</h3>
+                    <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.6;">
+                        SMS-Verifizierung und Community-driven Moderation für die sicherste Gaming-Umgebung
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Smart Features</h3>
+                    <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.6;">
+                        Real-time Matchmaking, Streaming-Integration, Social Features und Mobile-Optimierung
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎬</div>
+                    <h3>Content Hub</h3>
+                    <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.6;">
+                        Highlight-Clips teilen, Tournament-Coverage und Community-Generated Content
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 style="text-align: center; margin-bottom: 30px; font-size: 2em;">📊 Platform Preview</h2>
+            <div class="stats-preview">
+                <div class="stat-card">
+                    <div class="stat-number">2500+</div>
+                    <div style="color: rgba(255, 255, 255, 0.8);">Target ELO Range</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">4</div>
+                    <div style="color: rgba(255, 255, 255, 0.8);">Regions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100</div>
+                    <div style="color: rgba(255, 255, 255, 0.8);">Elite Players</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">24/7</div>
+                    <div style="color: rgba(255, 255, 255, 0.8);">Matchmaking</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="beta-signup">
+            <h3 style="font-size: 2.5em; margin-bottom: 20px; position: relative; z-index: 1;">
+                🚀 Elite Beta Access
+            </h3>
+            <p style="margin-bottom: 35px; font-size: 1.2em; position: relative; z-index: 1; color: rgba(255, 255, 255, 0.9);">
+                Werde einer der ersten Elite-Spieler und sichere dir exklusive Vorteile!
+            </p>
+            
+            <div style="max-width: 500px; margin: 0 auto; position: relative; z-index: 1;">
+                <div class="form-group">
+                    <input type="email" id="betaEmail" placeholder="Deine E-Mail Adresse" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="betaTag" placeholder="Dein Smash Tag (optional)" >
+                </div>
+                <div class="form-group">
+                    <select id="betaRegion" required>
+                        <option value="">Wähle deine Region</option>
+                        <option value="EU">🇪🇺 Europa</option>
+                        <option value="NA">🇺🇸 Nordamerika</option>
+                        <option value="JP">🇯🇵 Japan</option>
+                        <option value="OCE">🇦🇺 Ozeanien</option>
+                    </select>
+                </div>
+                <button class="btn btn-elite" onclick="joinEliteBeta()" style="width: 100%; font-size: 1.3em; padding: 20px;">
+                    🏆 Elite Beta beitreten
+                </button>
+            </div>
+            
+            <div style="margin-top: 30px; font-size: 1em; opacity: 0.9; position: relative; z-index: 1;">
+                <div style="display: inline-flex; gap: 30px; flex-wrap: wrap; justify-content: center;">
+                    <span>✅ Früher Zugang</span>
+                    <span>✅ Exklusive Elite-Badge</span>
+                    <span>✅ Founder-Benefits</span>
+                    <span>✅ Priority Support</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 style="text-align: center; margin-bottom: 40px; font-size: 2em;">🗺️ Development Roadmap</h2>
+            
+            <div class="roadmap">
+                <div class="roadmap-phase phase-current">
+                    <h4 style="color: #2ecc71; margin-bottom: 15px; font-size: 1.3em;">🔄 Phase 1 - Q2 2025</h4>
+                    <ul style="list-style: none; padding: 0; line-height: 1.8;">
+                        <li>✅ Platform Design & Architecture</li>
+                        <li>✅ Frontend Development</li>
+                        <li>🔄 Backend API Development</li>
+                        <li>🔄 ELO System Implementation</li>
+                        <li>⏳ SMS Authentication</li>
+                    </ul>
+                </div>
+                
+                <div class="roadmap-phase phase-next">
+                    <h4 style="color: #3498db; margin-bottom: 15px; font-size: 1.3em;">🚀 Phase 2 - Q3 2025</h4>
+                    <ul style="list-style: none; padding: 0; line-height: 1.8;">
+                        <li>⏳ Real-time Matchmaking Engine</li>
+                        <li>⏳ Regional Leaderboards</li>
+                        <li>⏳ Elite Beta Launch</li>
+                        <li>⏳ Community Testing & Feedback</li>
+                        <li>⏳ Mobile Optimization</li>
+                    </ul>
+                </div>
+                
+                <div class="roadmap-phase phase-future">
+                    <h4 style="color: #9b59b6; margin-bottom: 15px; font-size: 1.3em;">🏆 Phase 3 - Q4 2025</h4>
+                    <ul style="list-style: none; padding: 0; line-height: 1.8;">
+                        <li>📅 Public Launch</li>
+                        <li>📅 Tournament Integration</li>
+                        <li>📅 Advanced Social Features</li>
+                        <li>📅 Streaming Integration</li>
+                        <li>📅 Elite Championship Events</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" style="text-align: center;">
+            <h2 style="margin-bottom: 20px; font-size: 2em;">💎 Warum EliteSmash?</h2>
+            <div style="max-width: 800px; margin: 0 auto; font-size: 1.1em; line-height: 1.8; color: rgba(255, 255, 255, 0.9);">
+                <p style="margin-bottom: 20px;">
+                    <strong style="color: #ffd700;">EliteSmash</strong> wird nicht einfach nur eine weitere Matchmaking-Platform. 
+                    Wir erschaffen das <strong>premium destination</strong> für serious competitive Smash Bros Spieler.
+                </p>
+                <p style="margin-bottom: 20px;">
+                    Mit unserem <strong style="color: #ffd700;">Elite-focused approach</strong> verbinden wir 
+                    top-tier Spieler, bieten echte Karriere-Opportunities durch Tournament-Qualifikationen 
+                    und schaffen eine Community, die Excellence belohnt.
+                </p>
+                <p>
+                    <strong style="color: #ff6b35;">Ready to join the Elite?</strong>
+                </p>
+            </div>
+        </div>
+
+        <footer style="text-align: center; padding: 40px 0; color: rgba(255, 255, 255, 0.6); border-top: 1px solid rgba(255, 255, 255, 0.1); margin-top: 60px;">
+            <p style="margin-bottom: 10px;">© 2025 EliteSmash - Premium Gaming Platform</p>
+            <p style="font-size: 0.9em;">
+                Made with 🏆 for the competitive Smash Bros community
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Enhanced EliteSmash JavaScript
+        function joinEliteBeta() {
+            const email = document.getElementById('betaEmail').value;
+            const tag = document.getElementById('betaTag').value;
+            const region = document.getElementById('betaRegion').value;
+            
+            if (!email || !region) {
+                showNotification('Bitte fülle alle Pflichtfelder aus!', 'info');
+                return;
+            }
+            
+            // Simulate beta registration
+            const betaData = {
+                email: email,
+                tag: tag || 'Anonymous Elite',
+                region: region,
+                timestamp: new Date().toISOString(),
+                betaNumber: Math.floor(Math.random() * 1000) + 1
+            };
+            
+            // Store in localStorage for demo
+            let betaSignups = JSON.parse(localStorage.getItem('elitesmash_beta') || '[]');
+            betaSignups.push(betaData);
+            localStorage.setItem('elitesmash_beta', JSON.stringify(betaSignups));
+            
+            showNotification(`🏆 Willkommen bei der Elite Beta, ${betaData.tag}! Du bist #${betaData.betaNumber} in ${region}.`, 'success');
+            
+            // Clear form
+            document.getElementById('betaEmail').value = '';
+            document.getElementById('betaTag').value = '';
+            document.getElementById('betaRegion').value = '';
+            
+            // Update UI to show registered state
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = '✅ Elite Beta Registration erfolgreich!';
+            button.style.background = 'linear-gradient(45deg, #2ecc71, #27ae60)';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = 'linear-gradient(45deg, #ffd700, #ff6b35)';
+                button.disabled = false;
+            }, 3000);
+        }
+        
+        function showNotification(message, type = 'info') {
+            // Remove existing notification
+            const existing = document.querySelector('.notification');
+            if (existing) {
+                existing.remove();
+            }
+            
+            // Create new notification
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideInRight 0.4s ease reverse';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 400);
+            }, 4000);
+        }
+        
+        // Enhanced user interactions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add hover effects to feature cards
+            const featureCards = document.querySelectorAll('.feature-card');
+            featureCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.borderColor = 'rgba(255, 215, 0, 0.5)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                });
+            });
+            
+            // Show beta signup count if available
+            const betaSignups = JSON.parse(localStorage.getItem('elitesmash_beta') || '[]');
+            if (betaSignups.length > 0) {
+                const banner = document.querySelector('.demo-banner');
+                banner.innerHTML += ` • ${betaSignups.length} Elite Beta Members registered!`;
+            }
+            
+            // Welcome message for returning visitors
+            if (betaSignups.some(signup => signup.email)) {
+                setTimeout(() => {
+                    showNotification('🏆 Welcome back, Elite Member!', 'success');
+                }, 1000);
+            }
+        });
+        
+        // Smooth scrolling for better UX
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Dynamic statistics counter
+        function animateNumbers() {
+            const statNumbers = document.querySelectorAll('.stat-number');
+            statNumbers.forEach(stat => {
+                const finalNumber = stat.textContent;
+                const isNumber = !isNaN(finalNumber.replace(/[^0-9]/g, ''));
+                
+                if (isNumber) {
+                    const targetNumber = parseInt(finalNumber.replace(/[^0-9]/g, ''));
+                    let currentNumber = 0;
+                    const increment = targetNumber / 50;
+                    const suffix = finalNumber.replace(/[0-9]/g, '');
+                    
+                    const timer = setInterval(() => {
+                        currentNumber += increment;
+                        if (currentNumber >= targetNumber) {
+                            stat.textContent = finalNumber;
+                            clearInterval(timer);
+                        } else {
+                            stat.textContent = Math.floor(currentNumber) + suffix;
+                        }
+                    }, 30);
+                }
+            });
+        }
+
+        // Trigger number animation when scrolled into view
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateNumbers();
+                    observer.unobserve(entry.target);
+                }
+            });
+        });
+
+        const statsPreview = document.querySelector('.stats-preview');
+        if (statsPreview) {
+            observer.observe(statsPreview);
+        }
+
+        // Enhanced keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.classList.contains('btn')) {
+                e.target.click();
+            }
+        });
+
+        // Form validation with better UX
+        const inputs = document.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.hasAttribute('required') && !this.value) {
+                    this.style.borderColor = '#e74c3c';
+                    this.style.boxShadow = '0 0 10px rgba(231, 76, 60, 0.3)';
+                } else {
+                    this.style.borderColor = '';
+                    this.style.boxShadow = '';
+                }
+            });
+
+            input.addEventListener('input', function() {
+                if (this.style.borderColor === 'rgb(231, 76, 60)') {
+                    this.style.borderColor = '';
+                    this.style.boxShadow = '';
+                }
+            });
+        });
+
+        // Performance optimization: Lazy load effects
+        const lazyElements = document.querySelectorAll('.feature-card, .section');
+        const lazyObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                    lazyObserver.unobserve(entry.target);
+                }
+            });
+        });
+
+        lazyElements.forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            lazyObserver.observe(el);
+        });
+
+        console.log('🏆 EliteSmash loaded successfully! Welcome to the Elite Gaming Platform.');
+    </script>
+</body>
+</html>
