@@ -520,7 +520,7 @@
                         <option value="OCE">🇦🇺 Ozeanien</option>
                     </select>
                 </div>
-                <button class="btn btn-elite" onclick="joinEliteBeta()" style="width: 100%; font-size: 1.3em; padding: 20px;">
+                <button class="btn btn-elite" onclick="joinEliteBeta()" style="width: 100%; font-size: 1.3em; padding: 20px;" id="betaSubmitBtn">
                     🏆 Elite Beta beitreten
                 </button>
             </div>
@@ -603,9 +603,13 @@
     <script>
         // Enhanced EliteSmash JavaScript
         function joinEliteBeta() {
+            console.log('Beta registration started...'); // Debug log
+            
             const email = document.getElementById('betaEmail').value;
             const tag = document.getElementById('betaTag').value;
             const region = document.getElementById('betaRegion').value;
+            
+            console.log('Form data:', { email, tag, region }); // Debug log
             
             if (!email || !region) {
                 showNotification('Bitte fülle alle Pflichtfelder aus!', 'info');
@@ -644,6 +648,8 @@
                 id: 'elite_' + Date.now()
             };
             
+            console.log('Saving beta data:', betaData); // Debug log
+            
             // Store registration
             betaSignups.push(betaData);
             localStorage.setItem('elitesmash_beta', JSON.stringify(betaSignups));
@@ -661,24 +667,30 @@
             document.getElementById('betaRegion').value = '';
             
             // Update button temporarily
-            const button = event.target;
-            const originalText = button.textContent;
-            button.textContent = '✅ Elite Beta Registration erfolgreich!';
-            button.style.background = 'linear-gradient(45deg, #2ecc71, #27ae60)';
-            button.disabled = true;
+            const button = document.getElementById('betaSubmitBtn');
+            if (button) {
+                const originalText = button.textContent;
+                button.textContent = '✅ Elite Beta Registration erfolgreich!';
+                button.style.background = 'linear-gradient(45deg, #2ecc71, #27ae60)';
+                button.disabled = true;
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = 'linear-gradient(45deg, #ffd700, #ff6b35)';
+                    button.disabled = false;
+                }, 3000);
+            }
             
             // Update beta stats in platform preview
+            console.log('Updating beta stats...'); // Debug log
             updateBetaStats();
-            
-            setTimeout(() => {
-                button.textContent = originalText;
-                button.style.background = 'linear-gradient(45deg, #ffd700, #ff6b35)';
-                button.disabled = false;
-            }, 3000);
         }
         
         function updateBetaStats() {
+            console.log('updateBetaStats called'); // Debug log
+            
             const betaSignups = JSON.parse(localStorage.getItem('elitesmash_beta') || '[]');
+            console.log('Beta signups:', betaSignups); // Debug log
             
             // Count by region
             const regionCounts = betaSignups.reduce((acc, signup) => {
@@ -686,12 +698,22 @@
                 return acc;
             }, { EU: 0, NA: 0, JP: 0, OCE: 0 });
 
+            console.log('Region counts:', regionCounts); // Debug log
+
             // Update the stat cards
-            document.getElementById('statEU').textContent = regionCounts.EU;
-            document.getElementById('statNA').textContent = regionCounts.NA;
-            document.getElementById('statJP').textContent = regionCounts.JP;
-            document.getElementById('statOCE').textContent = regionCounts.OCE;
-            document.getElementById('statTotal').textContent = betaSignups.length;
+            const statEU = document.getElementById('statEU');
+            const statNA = document.getElementById('statNA');
+            const statJP = document.getElementById('statJP');
+            const statOCE = document.getElementById('statOCE');
+            const statTotal = document.getElementById('statTotal');
+            
+            if (statEU) statEU.textContent = regionCounts.EU;
+            if (statNA) statNA.textContent = regionCounts.NA;
+            if (statJP) statJP.textContent = regionCounts.JP;
+            if (statOCE) statOCE.textContent = regionCounts.OCE;
+            if (statTotal) statTotal.textContent = betaSignups.length;
+            
+            console.log('Stats updated successfully'); // Debug log
         }
         
         function showBetaStats() {
