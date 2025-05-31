@@ -468,18 +468,26 @@
 
         <div class="section">
             <h2 style="text-align: center; margin-bottom: 30px; font-size: 2em;">📊 Platform Preview</h2>
-            <div class="stats-preview">
+            <div class="stats-preview" id="statsPreview">
                 <div class="stat-card">
-                    <div class="stat-number">2500+</div>
-                    <div style="color: rgba(255, 255, 255, 0.8);">Target ELO Range</div>
+                    <div class="stat-number" id="statEU">0</div>
+                    <div style="color: rgba(255, 255, 255, 0.8);">🇪🇺 EU Beta</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">4</div>
-                    <div style="color: rgba(255, 255, 255, 0.8);">Regions</div>
+                    <div class="stat-number" id="statNA">0</div>
+                    <div style="color: rgba(255, 255, 255, 0.8);">🇺🇸 NA Beta</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">100</div>
-                    <div style="color: rgba(255, 255, 255, 0.8);">Elite Players</div>
+                    <div class="stat-number" id="statJP">0</div>
+                    <div style="color: rgba(255, 255, 255, 0.8);">🇯🇵 JP Beta</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statOCE">0</div>
+                    <div style="color: rgba(255, 255, 255, 0.8);">🇦🇺 OCE Beta</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statTotal">0</div>
+                    <div style="color: rgba(255, 255, 255, 0.8);">Total Members</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number">24/7</div>
@@ -659,8 +667,8 @@
             button.style.background = 'linear-gradient(45deg, #2ecc71, #27ae60)';
             button.disabled = true;
             
-            // Update beta counter in banner
-            updateBetaCounter();
+            // Update beta stats in platform preview
+            updateBetaStats();
             
             setTimeout(() => {
                 button.textContent = originalText;
@@ -669,23 +677,21 @@
             }, 3000);
         }
         
-        function updateBetaCounter() {
+        function updateBetaStats() {
             const betaSignups = JSON.parse(localStorage.getItem('elitesmash_beta') || '[]');
-            const banner = document.querySelector('.demo-banner');
             
-            if (betaSignups.length > 0) {
-                // Get region breakdown
-                const regionCounts = betaSignups.reduce((acc, signup) => {
-                    acc[signup.region] = (acc[signup.region] || 0) + 1;
-                    return acc;
-                }, {});
-                
-                const regionText = Object.entries(regionCounts)
-                    .map(([region, count]) => `${region}: ${count}`)
-                    .join(' • ');
-                
-                banner.innerHTML = `🚧 ENTWICKLUNG LÄUFT - ${betaSignups.length} Elite Beta Members registriert! (${regionText}) 🚧`;
-            }
+            // Count by region
+            const regionCounts = betaSignups.reduce((acc, signup) => {
+                acc[signup.region] = (acc[signup.region] || 0) + 1;
+                return acc;
+            }, { EU: 0, NA: 0, JP: 0, OCE: 0 });
+
+            // Update the stat cards
+            document.getElementById('statEU').textContent = regionCounts.EU;
+            document.getElementById('statNA').textContent = regionCounts.NA;
+            document.getElementById('statJP').textContent = regionCounts.JP;
+            document.getElementById('statOCE').textContent = regionCounts.OCE;
+            document.getElementById('statTotal').textContent = betaSignups.length;
         }
         
         function showBetaStats() {
@@ -724,15 +730,15 @@
         function clearBetaData() {
             if (confirm('Admin: Alle Beta-Daten löschen? (Nur für Testing)')) {
                 localStorage.removeItem('elitesmash_beta');
-                updateBetaCounter();
+                updateBetaStats();
                 showNotification('Beta-Daten gelöscht!', 'info');
             }
         }
         
         // Enhanced user interactions
         document.addEventListener('DOMContentLoaded', function() {
-            // Update beta counter on page load
-            updateBetaCounter();
+            // Update beta stats on page load
+            updateBetaStats();
             
             // Add keyboard shortcut for beta stats (Admin feature)
             document.addEventListener('keydown', function(e) {
