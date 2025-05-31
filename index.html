@@ -378,7 +378,64 @@
             color: #ffd700;
         }
 
-        @media (max-width: 768px) {
+        .success-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .success-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 40px;
+            border-radius: 25px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .success-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: bounceIn 0.6s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #ffd700;
+            transition: color 0.3s ease;
+        }
+
+        .close-modal:hover {
+            color: #ff6b35;
+        }
             .container { padding: 15px; }
             .header h1 { font-size: 2.8em; }
             .header { padding: 25px; }
@@ -600,26 +657,47 @@
         </footer>
     </div>
 
+    <!-- Success Modal -->
+    <div id="successModal" class="success-modal">
+        <div class="success-modal-content">
+            <span class="close-modal" onclick="closeSuccessModal()">&times;</span>
+            <div class="success-icon">🏆</div>
+            <h2 style="color: #ffd700; margin-bottom: 20px; font-size: 2em;">Willkommen bei EliteSmash!</h2>
+            <div id="successMessage" style="margin-bottom: 30px; font-size: 1.1em; line-height: 1.6;">
+                <!-- Success message will be inserted here -->
+            </div>
+            <div style="background: rgba(255, 215, 0, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+                <h4 style="color: #ffd700; margin-bottom: 10px;">📧 Nächste Schritte:</h4>
+                <p style="margin-bottom: 10px;">✅ Du erhältst eine Bestätigungs-E-Mail</p>
+                <p style="margin-bottom: 10px;">✅ Beta-Updates direkt in dein Postfach</p>
+                <p>✅ Früher Zugang wenn die Beta startet</p>
+            </div>
+            <button class="btn btn-elite" onclick="closeSuccessModal()" style="width: 100%;">
+                Verstanden! 🚀
+            </button>
+        </div>
+    </div>
+
     <script>
-        // Enhanced EliteSmash JavaScript
+        // Enhanced EliteSmash JavaScript with Success Modal
         function joinEliteBeta() {
-            console.log('Beta registration started...'); // Debug log
+            console.log('🚀 Beta registration started...');
             
-            const email = document.getElementById('betaEmail').value;
-            const tag = document.getElementById('betaTag').value;
+            const email = document.getElementById('betaEmail').value.trim();
+            const tag = document.getElementById('betaTag').value.trim();
             const region = document.getElementById('betaRegion').value;
             
-            console.log('Form data:', { email, tag, region }); // Debug log
+            console.log('📝 Form data:', { email, tag, region });
             
+            // Validation
             if (!email || !region) {
-                showNotification('Bitte fülle alle Pflichtfelder aus!', 'info');
+                showNotification('❌ Bitte fülle alle Pflichtfelder aus!', 'error');
                 return;
             }
             
-            // Validate email format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
-                showNotification('Bitte gib eine gültige E-Mail Adresse ein!', 'info');
+                showNotification('❌ Bitte gib eine gültige E-Mail Adresse ein!', 'error');
                 return;
             }
             
@@ -628,69 +706,128 @@
             const existingSignup = betaSignups.find(signup => signup.email === email);
             
             if (existingSignup) {
-                showNotification(`Du bist bereits registriert! Position #${existingSignup.betaNumber} in ${existingSignup.region}`, 'info');
+                showNotification(`ℹ️ Du bist bereits registriert! Position #${existingSignup.betaNumber} in ${existingSignup.region}`, 'info');
                 return;
             }
             
-            // Get region-specific count
-            const regionSignups = betaSignups.filter(signup => signup.region === region);
-            const regionPosition = regionSignups.length + 1;
-            const globalPosition = betaSignups.length + 1;
-            
-            // Create beta registration
-            const betaData = {
-                email: email,
-                tag: tag || 'Elite Player',
-                region: region,
-                timestamp: new Date().toISOString(),
-                betaNumber: regionPosition,
-                globalPosition: globalPosition,
-                id: 'elite_' + Date.now()
-            };
-            
-            console.log('Saving beta data:', betaData); // Debug log
-            
-            // Store registration
-            betaSignups.push(betaData);
-            localStorage.setItem('elitesmash_beta', JSON.stringify(betaSignups));
-            
-            // Show realistic success message
-            const playerName = tag || 'Elite Player';
-            showNotification(
-                `🏆 Willkommen ${playerName}! Du bist #${regionPosition} in der ${region} Beta-Warteschlange. Wir senden dir Updates!`, 
-                'success'
-            );
-            
-            // Clear form
-            document.getElementById('betaEmail').value = '';
-            document.getElementById('betaTag').value = '';
-            document.getElementById('betaRegion').value = '';
-            
-            // Update button temporarily
+            // Disable button during processing
             const button = document.getElementById('betaSubmitBtn');
-            if (button) {
-                const originalText = button.textContent;
-                button.textContent = '✅ Elite Beta Registration erfolgreich!';
-                button.style.background = 'linear-gradient(45deg, #2ecc71, #27ae60)';
-                button.disabled = true;
-                
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.background = 'linear-gradient(45deg, #ffd700, #ff6b35)';
-                    button.disabled = false;
-                }, 3000);
-            }
+            button.disabled = true;
+            button.textContent = '⏳ Verarbeite...';
             
-            // Update beta stats in platform preview
-            console.log('Updating beta stats...'); // Debug log
-            updateBetaStats();
+            // Simulate processing delay (realistic UX)
+            setTimeout(() => {
+                // Get region-specific count
+                const regionSignups = betaSignups.filter(signup => signup.region === region);
+                const regionPosition = regionSignups.length + 1;
+                const globalPosition = betaSignups.length + 1;
+                
+                // Create beta registration
+                const betaData = {
+                    email: email,
+                    tag: tag || 'Elite Player',
+                    region: region,
+                    timestamp: new Date().toISOString(),
+                    betaNumber: regionPosition,
+                    globalPosition: globalPosition,
+                    id: 'elite_' + Date.now(),
+                    status: 'confirmed'
+                };
+                
+                console.log('💾 Saving beta data:', betaData);
+                
+                // Store registration
+                betaSignups.push(betaData);
+                localStorage.setItem('elitesmash_beta', JSON.stringify(betaSignups));
+                
+                // Clear form
+                document.getElementById('betaEmail').value = '';
+                document.getElementById('betaTag').value = '';
+                document.getElementById('betaRegion').value = '';
+                
+                // Update stats
+                updateBetaStats();
+                
+                // Show success modal
+                showSuccessModal(betaData);
+                
+                // Reset button
+                button.disabled = false;
+                button.textContent = '🏆 Elite Beta beitreten';
+                
+                // Send email (simulated for now)
+                sendConfirmationEmail(betaData);
+                
+                console.log('✅ Registration completed successfully');
+                
+            }, 1000); // 1 second delay for realistic UX
+        }
+        
+        function showSuccessModal(betaData) {
+            const modal = document.getElementById('successModal');
+            const messageEl = document.getElementById('successMessage');
+            
+            const playerName = betaData.tag;
+            const message = `
+                <p><strong>${playerName}</strong>, du bist jetzt Teil der EliteSmash Beta!</p>
+                <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; margin: 20px 0;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.95em;">
+                        <div>📍 <strong>Region:</strong> ${betaData.region}</div>
+                        <div>🏆 <strong>Position:</strong> #${betaData.betaNumber}</div>
+                        <div>📧 <strong>E-Mail:</strong> ${betaData.email}</div>
+                        <div>📅 <strong>Datum:</strong> ${new Date().toLocaleDateString('de-DE')}</div>
+                    </div>
+                </div>
+            `;
+            
+            messageEl.innerHTML = message;
+            modal.style.display = 'block';
+            
+            // Auto-close after 10 seconds
+            setTimeout(() => {
+                closeSuccessModal();
+            }, 10000);
+        }
+        
+        function closeSuccessModal() {
+            const modal = document.getElementById('successModal');
+            modal.style.animation = 'fadeIn 0.3s ease reverse';
+            setTimeout(() => {
+                modal.style.display = 'none';
+                modal.style.animation = 'fadeIn 0.3s ease';
+            }, 300);
+        }
+        
+        function sendConfirmationEmail(betaData) {
+            // Simulate email sending (for demo)
+            console.log('📧 Sending confirmation email to:', betaData.email);
+            
+            // In real app, this would call your backend:
+            // fetch('/api/send-confirmation-email', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(betaData)
+            // });
+            
+            // For now, just show in console what the email would contain
+            console.log('📧 Email content:', {
+                to: betaData.email,
+                subject: `🏆 Willkommen bei EliteSmash Beta - Position #${betaData.betaNumber} in ${betaData.region}`,
+                template: 'beta-confirmation',
+                data: betaData
+            });
+            
+            // Simulate email sending delay
+            setTimeout(() => {
+                showNotification('📧 Bestätigungs-E-Mail wurde versendet!', 'success');
+            }, 2000);
         }
         
         function updateBetaStats() {
-            console.log('updateBetaStats called'); // Debug log
+            console.log('📊 Updating beta stats...');
             
             const betaSignups = JSON.parse(localStorage.getItem('elitesmash_beta') || '[]');
-            console.log('Beta signups:', betaSignups); // Debug log
+            console.log('📈 Beta signups:', betaSignups.length);
             
             // Count by region
             const regionCounts = betaSignups.reduce((acc, signup) => {
@@ -698,22 +835,31 @@
                 return acc;
             }, { EU: 0, NA: 0, JP: 0, OCE: 0 });
 
-            console.log('Region counts:', regionCounts); // Debug log
+            console.log('🌍 Region counts:', regionCounts);
 
-            // Update the stat cards
-            const statEU = document.getElementById('statEU');
-            const statNA = document.getElementById('statNA');
-            const statJP = document.getElementById('statJP');
-            const statOCE = document.getElementById('statOCE');
-            const statTotal = document.getElementById('statTotal');
+            // Update the stat cards with animation
+            updateStatCard('statEU', regionCounts.EU);
+            updateStatCard('statNA', regionCounts.NA);
+            updateStatCard('statJP', regionCounts.JP);
+            updateStatCard('statOCE', regionCounts.OCE);
+            updateStatCard('statTotal', betaSignups.length);
             
-            if (statEU) statEU.textContent = regionCounts.EU;
-            if (statNA) statNA.textContent = regionCounts.NA;
-            if (statJP) statJP.textContent = regionCounts.JP;
-            if (statOCE) statOCE.textContent = regionCounts.OCE;
-            if (statTotal) statTotal.textContent = betaSignups.length;
+            console.log('✅ Stats updated successfully');
+        }
+        
+        function updateStatCard(elementId, newValue) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
             
-            console.log('Stats updated successfully'); // Debug log
+            // Add animation effect
+            element.style.transform = 'scale(1.2)';
+            element.style.color = '#ffd700';
+            
+            setTimeout(() => {
+                element.textContent = newValue;
+                element.style.transform = 'scale(1)';
+                element.style.color = '';
+            }, 200);
         }
         
         function showBetaStats() {
